@@ -67,6 +67,7 @@ if [[ "$CC_CLUSTER" == "siku" || "$CC_CLUSTER" == "argo" ]]; then
 fi
 SYMLINK_PATH_PROJECTS="projects"
 if [[ "$CC_CLUSTER" == "tamia" ]]; then
+	PID_OFFSET_SCRATCH=20000000
 	SYMLINK_PATH_PROJECTS="links"
 fi
 
@@ -232,8 +233,19 @@ function find_and_report_usage {
 				pid=${project_info[0]}
 				data=($(get_lustre_project_info $pid $fs))
 			elif [[ "$fs" == "/home" || "$fs" == "/scratch" ]]; then
-				quota_type="user"
-				data=($(get_lustre_user_info $who $fs))
+				if [[ "$CC_CLUSTER" == "tamia" ]]; then
+					quota_type="project"
+					uid=$(id -u $who)
+					if [[ "$fs" == "/home" ]]; then
+						pid=$uid
+					elif [[ "$fs" == "/scratch" ]]; then
+						pid=$(($uid+$PID_OFFSET_SCRATCH))
+					fi
+					data=($(get_lustre_project_info $pid $fs))
+				else
+					quota_type="user"
+					data=($(get_lustre_user_info $who $fs))
+				fi
 			else
 				quota_type="group"
 				data=($(get_lustre_group_info $who $fs))

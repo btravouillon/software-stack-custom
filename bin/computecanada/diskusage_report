@@ -65,9 +65,11 @@ if [[ "$CC_CLUSTER" == "siku" || "$CC_CLUSTER" == "argo" ]]; then
 	QUOTA_INFO_PATH="/opt/software/diskusage"
 	QUOTA_UPDATE_INTERVAL="every 3 hours"
 fi
+SCALE="scale"
 SYMLINK_PATH_PROJECTS="projects"
 if [[ "$CC_CLUSTER" == "tamia" ]]; then
 	PID_OFFSET_SCRATCH=20000000
+	SCALE="scale_bytes"
 	SYMLINK_PATH_PROJECTS="links"
 fi
 
@@ -149,15 +151,15 @@ function scale {
 	fi
 }
 function scale_bytes {
-	num_bytes=$(($1*1024))
-	if [[ $num_bytes -ge $((10*1024*1024*1024*1024)) ]]; then 
-		echo "$((num_bytes / (1024*1024*1024*1024))) TB" 
-	elif [[ $num_bytes -ge $((10*1024*1024*1024)) ]]; then 
-		echo "$((num_bytes / (1024*1024*1024))) GB" 
+	num_bytes=$1
+	if [[ $num_bytes -ge $((10*1024*1024*1024*1024)) ]]; then
+		echo "$((num_bytes / (1024*1024*1024*1024))) TiB"
+	elif [[ $num_bytes -ge $((10*1024*1024*1024)) ]]; then
+		echo "$((num_bytes / (1024*1024*1024))) GiB"
 	elif [[ $num_bytes -ge $((10*1024*1024)) ]]; then
-		echo "$((num_bytes / (1024*1024))) MB" 
+		echo "$((num_bytes / (1024*1024))) MiB"
 	elif [[ $num_bytes -ge $((10*1024)) ]]; then
-		echo "$((num_bytes / (1024))) kB" 
+		echo "$((num_bytes / (1024))) kiB"
 	else
 		echo "$num_bytes B"
 	fi
@@ -193,8 +195,8 @@ function report_data {
 			usage_space=$((1000*$usage_space))
 			quota_space=$((1000*$quota_space))
 		fi
-		usage_bytes=$(scale $usage_space)
-		quota_bytes=$(scale $quota_space)
+		usage_bytes=$($SCALE $usage_space)
+		quota_bytes=$($SCALE $quota_space)
 		usage_files=$(scale $usage_files)
 		quota_files=$(scale $quota_files)
 
